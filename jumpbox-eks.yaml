@@ -1,0 +1,137 @@
+Metadata:
+  License: Apache-2.0
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'AWS CloudFormation template to create jumpbox node for EKS.'
+Parameters:
+  InstanceType:
+    Description: Enter a valid instance type for your selected region.
+    Type: String
+    Default: 't2.small'
+    AllowedValues:
+      - t2.small
+      - t2.medium
+      - t2.large
+      - m4.large
+      - m4.xlarge
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: VPC for jumpbox instance.
+  SubnetId:
+    Type: AWS::EC2::Subnet::Id
+    Description: Public subnet for jumpbox instance.
+  SSHKeyName:
+    Description: The EC2 Key Pair to allow SSH access to the EKS jumpbox.
+    Type: AWS::EC2::KeyPair::KeyName
+Mappings:
+  AWSRegionToAMI:
+    us-east-1: 
+      AMI: ami-0de53d8956e8dcf80    # Virginia
+    us-east-2:
+      AMI: ami-02bcbb802e03574ba    # Ohio
+    us-west-1:
+      AMI: ami-0019ef04ac50be30f    # N California
+    us-west-2:
+      AMI: ami-061392db613a6357b    # Oregon
+    ap-south-1:
+      AMI: ami-0889b8a448de4fc44    # Mumbai
+    ap-northeast-2:
+      AMI: ami-047f7b46bd6dd5d84    # Seoul
+    ap-southeast-1:
+      AMI: ami-0b419c3a4b01d1859    # Singapore
+    ap-southeast-2:
+      AMI: ami-04481c741a0311bbb    # Sydney
+    ap-northeast-1:
+      AMI: ami-0f9ae750e8274075b    # Tokyo
+    ca-central-1:
+      AMI: ami-03338e1f67dae0168    # Montreal
+    eu-central-1:
+      AMI: ami-09def150731bdbcc2    # Frankfurt
+    eu-west-1:
+      AMI: ami-07683a44e80cd32c5    # Ireland
+    eu-west-2:
+      AMI: ami-09ead922c1dad67e4    # London
+    eu-west-3:
+      AMI: ami-0451ae4fd8dd178f7    # Paris
+    sa-east-1:
+      AMI: ami-0669a96e355eac82f    # Sao Paulo
+Resources:
+  InstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: ec2.amazonaws.com
+          Action: sts:AssumeRole
+      Path: "/"
+      Policies: 
+        - PolicyName: "K8sClusterPolicy"
+          PolicyDocument: 
+            Version: "2012-10-17"
+            Statement: 
+              - Effect: "Allow"
+                Action: ["iam:*", "ec2:*", "autoscaling:*", "cloudformation:*", "eks:*"]
+                Resource: "*"
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonEC2RoleforSSM
+  NodeInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: "/"
+      Roles:
+      - !Ref InstanceRole
+  InstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Enable SSH access via port 22
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: 22
+        ToPort: 22
+        CidrIp: '0.0.0.0/0'
+  EC2Instance:
+    Type: 'AWS::EC2::Instance'
+    Metadata:
+      Comment: Install application
+      AWS::CloudFormation::Init:
+        config:
+          files:
+            /usr/local/bin/kubectl: 
+              source: https://amazon-eks.s3-us-west-2.amazonaws.com/1.12.7/2019-03-27/bin/linux/amd64/kubectl
+              mode: 755
+              owner: root
+              group: root
+            /usr/local/bin/aws-iam-authenticator: 
+              source: https://amazon-eks.s3-us-west-2.amazonaws.com/1.12.7/2019-03-27/bin/linux/amd64/aws-iam-authenticator
+              mode: 755
+              owner: root
+              group: root
+          sources: 
+            /usr/local/bin: https://github.com/weaveworks/eksctl/releases/download/latest_release/eksctl_Linux_amd64.tar.gz
+    Properties:
+      ImageId: !FindInMap [AWSRegionToAMI, !Ref 'AWS::Region', AMI]
+      InstanceType: !Ref InstanceType
+      KeyName: !Ref 'SSHKeyName'
+      IamInstanceProfile: !Ref NodeInstanceProfile
+      Tags:
+        - Key: Name
+          Value: !Ref AWS::StackName
+      NetworkInterfaces: 
+        - AssociatePublicIpAddress: "true"
+          DeviceIndex: "0"
+          GroupSet: [!Ref 'InstanceSecurityGroup']
+          SubnetId: !Ref SubnetId
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          yum install -y aws-cfn-bootstrap
+          /opt/aws/bin/cfn-init -v --stack '${AWS::StackName}' --resource EC2Instance --region '${AWS::Region}'
+          /opt/aws/bin/cfn-signal -e $? --stack !Ref '${AWS::StackName}' --resource EC2Instance --region '${AWS::Region}'
+
+Outputs:
+  PublicIP:
+    Description: Public IP address of the newly created EC2 instance
+    Value: !GetAtt [EC2Instance, PublicIp]
