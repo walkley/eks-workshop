@@ -6,10 +6,9 @@
 
 ## 1. 准备工作
 ### a. 请确保您有海外AWS账号和足够的资源配额
-- 请确保您有海外AWS账号的IAM user，该用户有创建相关资源的权限，并有创建至少一个VPC和3个EC2的资源配额。
-### b. 准备跳板机所需要的VPC和SSH秘钥对
-- 可以使用默认的VPC或者创建新的VPC, 新的VPC请确保有公有子网，可以参考[这个文档](https://docs.aws.amazon.com/zh_cn/vpc/latest/userguide/VPC_Scenario1.html#VPC_Scenario1_Implementation)创建新的VPC。
-- 如果您还没有SSH秘钥对，请参考[这个文档](https://docs.aws.amazon.com/zh_cn/AWSEC2/latest/UserGuide/ec2-key-pairs.html)创建新的秘钥对。
+- 请确保您有海外AWS账号的IAM user，该用户有创建相关资源的权限。
+### b. 准备跳板机所需要的VPC
+- 可以使用默认的VPC或者创建新的VPC, 可以参考[这个文档](https://docs.aws.amazon.com/zh_cn/vpc/latest/userguide/VPC_Scenario1.html#VPC_Scenario1_Implementation)创建新的VPC。
 
 ## 2. 创建跳板机
 请点击如下链接在各AWS区域创建跳板机：
@@ -46,7 +45,6 @@
 
 在Specify stack details(指定堆栈详细信息)页面填入相应参数：
 - InstanceType: 跳板机实例类型，可以保持默认参数。
-- SSHKeyName：AWS 上创建好的SSH key pair
 - SubnetId: 跳板机所在的共有子网，请确保选择公有子网。
 - VpcId: 跳板机所在VPC，请确保SubnetId是在VpcId所在的VPC内。
 
@@ -57,21 +55,21 @@
 
 
 ## 3. 登录跳板机创建EKS集群
-- 用SSH客户端登录上述第2步创建的跳板机，跳板机的IP地址可以从CloudFormation的输出界面中找到。
+- 登录跳板机的Web SSH控制台，控制台的URL可以从CloudFormation的输出界面中找到：
 ![](./images/cfn-ip.png)
- SSH用户名是ec2-user, 示例如下
+- 运行eksctl创建新的EKS集群：
   ```bash
-  ssh ec2-user@12.34.56.78 -i /path-to-my-key.pem
+  cd ~
+  REGION=`curl -s http://169.254.169.254/latest/dynamic/instance-identity/document|grep region|awk -F\" '{print $4}'`
+  eksctl create cluster --region=$REGION
   ```
-- 登录后运行eksctl创建新的EKS集群：
-  ```bash
-  eksctl create cluster
-  ```
-  不指定任何参数时，会在us-west-2(Oregon)创建新的VPC和EKS集群，会有两个m5.large worker node. 可以加参数指定集群名称，reqion，工作节点数量和类型等信息：
+  上述命令会在当前跳板机所在region创建新的VPC和EKS集群，有两个m5.large worker node。如果需要改变默认行为，可以加参数指定集群名称，reqion，工作节点数量和类型等信息：
   ```bash
   eksctl create cluster --name=eks-workshop --region=us-east-1 --nodes=3 --node-type=c5.large
   ```
-  更多参数可参考[eksctl官方文档](https://eksctl.io/)。所有资源创建可能需要15分钟左右。
+  更多参数可参考[eksctl官方文档](https://eksctl.io/)。
+  
+  所有资源创建可能需要15分钟左右。
   
 ## 4. 创建示例应用程序 2048小游戏
 在本部分中，您将创建一个2048小游戏来测试新集群。

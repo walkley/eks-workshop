@@ -19,9 +19,6 @@ Parameters:
   SubnetId:
     Type: AWS::EC2::Subnet::Id
     Description: Public subnet for jumpbox instance.
-  SSHKeyName:
-    Description: The EC2 Key Pair to allow SSH access to the EKS jumpbox.
-    Type: AWS::EC2::KeyPair::KeyName
 Mappings:
   AWSRegionToAMI:
     us-east-1: 
@@ -75,23 +72,13 @@ Resources:
                 Action: ["iam:*", "ec2:*", "autoscaling:*", "cloudformation:*", "eks:*"]
                 Resource: "*"
       ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/AmazonEC2RoleforSSM
+        - arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM
   NodeInstanceProfile:
     Type: AWS::IAM::InstanceProfile
     Properties:
       Path: "/"
       Roles:
       - !Ref InstanceRole
-  InstanceSecurityGroup:
-    Type: AWS::EC2::SecurityGroup
-    Properties:
-      GroupDescription: Enable SSH access via port 22
-      VpcId: !Ref VpcId
-      SecurityGroupIngress:
-      - IpProtocol: tcp
-        FromPort: 22
-        ToPort: 22
-        CidrIp: '0.0.0.0/0'
   EC2Instance:
     Type: 'AWS::EC2::Instance'
     Metadata:
@@ -114,15 +101,12 @@ Resources:
     Properties:
       ImageId: !FindInMap [AWSRegionToAMI, !Ref 'AWS::Region', AMI]
       InstanceType: !Ref InstanceType
-      KeyName: !Ref 'SSHKeyName'
       IamInstanceProfile: !Ref NodeInstanceProfile
       Tags:
         - Key: Name
           Value: !Ref AWS::StackName
       NetworkInterfaces: 
-        - AssociatePublicIpAddress: "true"
-          DeviceIndex: "0"
-          GroupSet: [!Ref 'InstanceSecurityGroup']
+        - DeviceIndex: "0"
           SubnetId: !Ref SubnetId
       UserData:
         Fn::Base64: !Sub |
@@ -132,6 +116,6 @@ Resources:
           /opt/aws/bin/cfn-signal -e $? --stack !Ref '${AWS::StackName}' --resource EC2Instance --region '${AWS::Region}'
 
 Outputs:
-  PublicIP:
-    Description: Public IP address of the newly created EC2 instance
-    Value: !GetAtt [EC2Instance, PublicIp]
+  SSHConsole:
+    Description: Jumpbox SSH console URL
+    Value: !Sub https://${AWS::Region}.console.aws.amazon.com/systems-manager/session-manager/${EC2Instance}?region=${AWS::Region}
