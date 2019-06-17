@@ -85,6 +85,9 @@ Resources:
       Comment: Install application
       AWS::CloudFormation::Init:
         config:
+          packages:
+            yum: 
+              jq: []
           files:
             /usr/local/bin/kubectl: 
               source: https://amazon-eks.s3-us-west-2.amazonaws.com/1.12.7/2019-03-27/bin/linux/amd64/kubectl
@@ -108,6 +111,7 @@ Resources:
       NetworkInterfaces: 
         - DeviceIndex: "0"
           SubnetId: !Ref SubnetId
+          AssociatePublicIpAddress: True
       UserData:
         Fn::Base64: !Sub |
           #!/bin/bash
