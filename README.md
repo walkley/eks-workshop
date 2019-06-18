@@ -75,8 +75,6 @@
       minSize: 3
       maxSize: 5
       privateNetworking: true
-      ssh:
-        publicKeyName: whe
       iam:
         attachPolicyARNs:
           - arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy
