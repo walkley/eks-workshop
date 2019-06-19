@@ -32,8 +32,6 @@ Amazon EC2 Spot 实例让您可以利用 AWS 云中未使用的 EC2 容量。与
 2. 这个ASG由若干数量的on-demand与spot组成
 3. spot一旦面临关机事件，会触发一个关机事件处理机制(termination handling)，提前对spot实例进行node draining，确保上面运行的pod可以提前被重新调度(reschedule)到其他节点。
 
-
-
 接下来我们就来实际操作
 
 ## Amazon EKS集群创建
@@ -86,18 +84,50 @@ https://github.com/pahud/eks-templates
 
 ## 验证集群
 
+透过`kubectl get no —show-labels`列出所有节点，可以看到ondemand与spot各自带上了不同的`lifecycle` label。
 
+![](images/01.png)
+
+因此可以透过label select的方式列出指定label的节点。
+
+![](images/02.png)
+
+打开EC2 console，查看Auto Scaling Group，会看到相应的配置。
+
+![](images/03.png)
 
 ## 部署eks-lambda-drainer
+
+Spot实例当面临资源回收，强迫被关机的时候，系统会提前两分钟收到通知，我们可以借由CloudWatch Event捕捉到这个通知信息出发一个外部调度的Lambda function对这个节点进行node draining。 eks-lambda-drainer专案可以帮助我们部署一个完全serverless独立于Kubernetes集群之外的无服务器时间响应handler，并且监听整个VPC内的spot关机信号，一旦提前两分钟获得关机信号就会对这个节点进行`kubectl drain`操作，确保节点上吗的Pod能被及时重新调度到其他节点上运行。
+
+![](https://raw.github.com/pahud/eks-lambda-drainer/master/images/eks-lambda-drainer.png)
+
+关于**eks-lambda-drainer**的部署方式，请参考Github
+
+https://github.com/pahud/eks-lambda-drainer
 
 
 
 ## 测试spot关机事件处理
 
+一旦**eks-lambda-drainer**部署完成，当spot准备关机的时候，eks-lambda-drainer会开始进行相应处理，从Lambda log可以看到如下的信息，表示确实对node节点进行了kubectl drain的操作。
+
+![](https://raw.github.com/pahud/eks-lambda-drainer/master/images/11.png)
+
+![](https://raw.github.com/pahud/eks-lambda-drainer/master/images/12.png)
+
 
 
 ## 结语
 
+Amazon EKS结合Amazon EC2 Spot是一个非常好的组合，常见的部署模式是把重要的controller或agent指定部署到on demand节点，而其他应用则部署到spot节点，甚至也可以全部都部署到spot节点。只要在ASG里面选择多种节点类型，并且同时选择至少三个AZ，如此ASG就会尽可能维护所需要的节点数量保证一定的高可用性。
+
 
 
 ## 公开案例
+
+知名在线旅游服务商**Skyscanner**在**This is My Architecture**系列影片当中揭露了他们在AWS上面构建Kubernetes集群，横跨全球多个地理区，多个集群，尖峰时间支撑每秒70-75K QPS，以及每个月8千万个月活用户，<u>**全部100%使用EC2 Spot构建K8S节点**</u>。
+
+**SkyScanner: Building Highly-Available, Multi-Region Kubernetes Clusters on 100% Amazon EC2 Spot**
+https://www.youtube.com/watch?v=99nNHsbwBpg
+
