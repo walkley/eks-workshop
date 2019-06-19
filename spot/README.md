@@ -126,7 +126,7 @@ Amazon EKS结合Amazon EC2 Spot是一个非常好的组合，常见的部署模�
 
 ## 公开案例
 
-知名在线旅游服务商**Skyscanner**在**This is My Architecture**系列影片当中揭露了他们在AWS上面构建Kubernetes集群，横跨全球多个地理区，多个集群，尖峰时间支撑每秒70-75K QPS，以及每个月8千万个月活用户，<u>**全部100%使用EC2 Spot构建K8S节点**</u>。
+知名在线旅游服务商**Skyscanner**在**This is My Architecture**系列影片当中揭露了他们在AWS上面构建Kubernetes集群，横跨全球多个地理区，多个集群，尖峰时间支撑每秒60-75K QPS，以及每个月8千万个月独立用户，<u>**全部100%使用EC2 Spot构建K8S节点**</u>。
 
 **SkyScanner: Building Highly-Available, Multi-Region Kubernetes Clusters on 100% Amazon EC2 Spot**
 https://www.youtube.com/watch?v=99nNHsbwBpg
