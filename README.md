@@ -22,10 +22,10 @@
   ```
   $ aws iam create-role --role-name EKSWorkshopC9Role --assume-role-policy-document https://raw.githubusercontent.com/walkley/eks-workshop/master/eks-workshop/ec2-role-trust-policy.json
   $ aws iam attach-role-policy --role-name EKSWorkshopC9Role --policy-arn arn:aws:iam::aws:policy/arn:aws:iam::aws:policy/AdministratorAccess
-  $ aws iam create-instance-profile --instance-profile-name EKSWorkshopC9InstanceProfile > /dev/null
-  $ aws iam add-role-to-instance-profile --role-name EKSWorkshopC9Role --instance-profile-name EKSWorkshopC9InstanceProfile > /dev/null
+  $ aws iam create-instance-profile --instance-profile-name EKSWorkshopC9InstanceProfile
+  $ aws iam add-role-to-instance-profile --role-name EKSWorkshopC9Role --instance-profile-name EKSWorkshopC9InstanceProfile
   $ MYINSTID=$(curl -sS http://169.254.169.254/latest/meta-data/instance-id)
-  $ aws ec2 associate-iam-instance-profile --instance-id $MYINSTID --iam-instance-profile Name=EKSWorkshopC9InstanceProfile > /dev/null
+  $ aws ec2 associate-iam-instance-profile --instance-id $MYINSTID --iam-instance-profile Name=EKSWorkshopC9InstanceProfile
   ```
 
 - 禁用掉managed temporary credentials：
@@ -125,7 +125,10 @@ $ kubectl -n 2048-game describe ing/2048-ingress
 ### c. 用浏览器打开上一步的ALB地址，开始您的2048游戏之旅！
 ![](./images/2048.png)
 
-## 7. 清理环境
+## 7. Amazon EKS结合Amazon EC2 Spot
+  参考[此文档](https://walkley.github.io/eks-workshop/spot/)以创建基于spot fleet的EKS集群。
+
+## 8. 清理环境
 ### a. 删除ingress
   ```bash
   $ kubectl delete -f 2048-ingress.yaml
