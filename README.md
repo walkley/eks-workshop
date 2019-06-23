@@ -18,14 +18,13 @@
 其它步骤可以保持默认参数不变，最后一步点击Create Environment. Cloud9新环境创建需要一分钟左右。
 
 ## 3. 配置Cloud9环境
-- 在Cloud9 terminal窗口中执行如下命令，创建新的EC2 instance profile并配置给当前Cloud9实例。
-  ```
-  $ aws iam create-role --role-name EKSWorkshopC9Role --assume-role-policy-document https://raw.githubusercontent.com/walkley/eks-workshop/master/eks-workshop/ec2-role-trust-policy.json
-  $ aws iam attach-role-policy --role-name EKSWorkshopC9Role --policy-arn arn:aws:iam::aws:policy/arn:aws:iam::aws:policy/AdministratorAccess
-  $ aws iam create-instance-profile --instance-profile-name EKSWorkshopC9InstanceProfile
-  $ aws iam add-role-to-instance-profile --role-name EKSWorkshopC9Role --instance-profile-name EKSWorkshopC9InstanceProfile
+- 在Cloud9 terminal窗口中执行如下命令，创建新的EC2 instance profile并配置给当前Cloud9实例。请注意下面第二行命令需要等待两分钟左右完成。
+  ```bash
+  $ aws cloudformation create-stack --stack-name eksworkshop-instprofile --capabilities CAPABILITY_IAM --template-url https://whe-pub.s3-ap-southeast-1.amazonaws.com/c9-instance-profile.yaml
+  $ aws cloudformation wait stack-create-complete --stack-name eksworkshop-instprofile
+  $ PROFILENAME=$(aws cloudformation describe-stacks --stack-name eksworkshop-instprofile --output text --query 'Stacks[0].Outputs[0].OutputValue')
   $ MYINSTID=$(curl -sS http://169.254.169.254/latest/meta-data/instance-id)
-  $ aws ec2 associate-iam-instance-profile --instance-id $MYINSTID --iam-instance-profile Name=EKSWorkshopC9InstanceProfile
+  $ aws ec2 associate-iam-instance-profile --instance-id $MYINSTID --iam-instance-profile Name=$PROFILENAME
   ```
 
 - 禁用掉managed temporary credentials：
@@ -48,7 +47,7 @@
   $ sudo mv /tmp/eksctl /usr/local/bin
    ```
 
-- 下载 `aws-iam-authenticator`
+- 下载 `aws-iam-authenticator`。*目前eksctl还[不支持使用aws cli get-token配置kube config](https://github.com/weaveworks/eksctl/issues/788)*
 
    ```bash
   $ sudo curl -o /usr/local/bin/aws-iam-authenticator https://amazon-eks.s3-us-west-2.amazonaws.com/1.13.7/2019-06-11/bin/linux/amd64/aws-iam-authenticator
@@ -60,12 +59,13 @@
   ```bash
   $ sudo yum install -y jq
   $ REGION=`curl -sS http://169.254.169.254/latest/dynamic/instance-identity/document | jq -r .region`
+  $ aws configure set default.region $REGION
   $ eksctl create cluster --region $REGION --name eks-workshop --alb-ingress-access
   ```
 
   更多参数可参考[eksctl官方文档](https://eksctl.io/)。
   
-  所有资源创建可能需要15分钟左右。
+  所有资源创建需要15分钟左右。
 
 ## 5. 配置Helm环境
 - 安装helm cli，创建tiller namespace:
@@ -122,7 +122,7 @@ $ kubectl -n 2048-game describe ing/2048-ingress
 ```
 ![](./images/alb-address.png)
 
-### c. 用浏览器打开上一步的ALB地址，开始您的2048游戏之旅！
+### c. 用浏览器打开上一步的ALB地址。如果不能正常显示，等待一分钟左右，或者进入EC2控制台查看ALB的状态。
 ![](./images/2048.png)
 
 ## 7. Amazon EKS结合Amazon EC2 Spot
@@ -135,5 +135,5 @@ $ kubectl -n 2048-game describe ing/2048-ingress
   ```
 ### b. 删除EKS集群
   ```bash
-  $ eksctl delete cluster eks-workshop --region $REGION
+  $ eksctl delete cluster eks-workshop
   ```

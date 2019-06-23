@@ -1,0 +1,28 @@
+Metadata:
+  License: Apache-2.0
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'AWS CloudFormation template to create instance profile for Cloud9.'
+Resources:
+  InstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: ec2.amazonaws.com
+          Action: sts:AssumeRole
+      Path: "/"
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AdministratorAccess
+  NodeInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: "/"
+      Roles:
+      - !Ref InstanceRole
+Outputs:
+  InstanceProfile:
+    Description: InstanceProfile ID
+    Value: !Ref NodeInstanceProfile
