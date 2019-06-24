@@ -81,6 +81,9 @@ $ eksctl create cluster -f cluster.yaml
 https://github.com/pahud/eks-templates
 
 
+## node labels, taints and tolerations
+透过eks-templates模版创建的混合集群，会自动将ondemand于spot实例打上不同的node labels，同时也会对spot打上相应的taints([更多说明](https://github.com/pahud/eks-templates#node-labels-taints-and-tolerations))，这部分eksctl专案也有对应的[issue](https://github.com/weaveworks/eksctl/issues/929)，预计很快也能实现。
+
 
 ## 验证集群
 
