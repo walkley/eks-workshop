@@ -133,4 +133,5 @@ Amazon EKS结合Amazon EC2 Spot是一个非常好的组合，常见的部署模�
 
 **SkyScanner: Building Highly-Available, Multi-Region Kubernetes Clusters on 100% Amazon EC2 Spot**
 https://www.youtube.com/watch?v=99nNHsbwBpg
+![](https://i.ytimg.com/vi/99nNHsbwBpg/maxresdefault.jpg)
 
