@@ -22,7 +22,7 @@ Amazon EC2 Spot 实例让您可以利用 AWS 云中未使用的 EC2 容量。与
 
 下面这张图说明整个Amazon EKS结合Spot的整体架构
 
-![](https://raw.githubusercontent.com/pahud/eks-templates/master/images/arch-overview.png)
+![](https://raw.githubusercontent.com/aws-samples/amazon-eks-refarch-cloudformation/master/images/arch-overview.png)
 
 
 
@@ -74,15 +74,15 @@ $ eksctl create cluster -f cluster.yaml
 
 
 
-## 使用eks-templates模版创建
+## 使用amazon-eks-refarch模版创建
 
-除了使用`eksctl`之外，我们也可以透过[pahud/eks-templates](https://github.com/pahud/eks-templates)专案来创建这样的混合集群，**pahud/eks-templates**使用100%的cloudformation模版，并且提供丰富的特性。
+除了使用`eksctl`之外，我们也可以透过[aws-samples/amazon-eks-refarch-cloudformation](https://github.com/aws-samples/amazon-eks-refarch-cloudformation)专案来创建这样的混合集群，**amazon-eks-refarch-cloudformation** 使用100%的cloudformation模版，并且提供丰富的特性。
 
-https://github.com/pahud/eks-templates
+https://github.com/aws-samples/amazon-eks-refarch-cloudformation
 
 
 ## node labels, taints and tolerations
-透过eks-templates模版创建的混合集群，会自动将ondemand于spot实例打上不同的node labels，同时也会对spot打上相应的taints([更多说明](https://github.com/pahud/eks-templates#node-labels-taints-and-tolerations))，这部分eksctl专案也有对应的[issue](https://github.com/weaveworks/eksctl/issues/929)，预计很快也能实现。
+透过eks-templates模版创建的混合集群，会自动将ondemand于spot实例打上不同的node labels，同时也会对spot打上相应的taints，这部分eksctl专案也有对应的[issue](https://github.com/weaveworks/eksctl/issues/929)，预计很快也能实现。
 
 
 ## 验证集群
